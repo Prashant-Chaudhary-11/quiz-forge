@@ -6,8 +6,7 @@ import { ContentStep } from "@/components/ContentStep";
 import { ConfigStep } from "@/components/ConfigStep";
 import { QuizViewer } from "@/components/QuizViewer";
 import { QuizLibrary } from "@/components/QuizLibrary";
-import { supabase } from "@/lib/supabase";
-import { hasApiKey } from "@/lib/storage";
+import { hasApiKey, saveQuiz } from "@/lib/storage";
 import type { Category, ModuleType, QuizData, QuizRecord } from "@/lib/types";
 
 type View = "home" | "config" | "viewer" | "library";
@@ -24,39 +23,28 @@ export default function App() {
     title: string;
     category: string;
   } | null>(null);
-  const [savedQuiz, setSavedQuiz] = useState<QuizRecord | null>(null);
+  const [_savedQuiz, setSavedQuiz] = useState<QuizRecord | null>(null);
 
-  const handleGenerated = async (
+  const handleGenerated = (
     quiz: QuizData,
     title: string,
     category: Category,
     count: number,
     modules: ModuleType[]
   ) => {
-    const { data, error } = await supabase
-      .from("quizzes")
-      .insert({
-        title,
-        source_content: content,
-        source_label: sourceLabel,
-        category,
-        question_count: count,
-        module_types: modules,
-        quiz_data: quiz,
-      })
-      .select("*")
-      .single();
+    const saved = saveQuiz({
+      title,
+      source_content: content,
+      source_label: sourceLabel,
+      category,
+      question_count: count,
+      module_types: modules,
+      quiz_data: quiz,
+    });
 
-    if (error || !data) {
-      setGeneratedQuiz(quiz);
-      setQuizMeta({ title, category });
-      setView("viewer");
-      return;
-    }
-
-    setSavedQuiz(data as QuizRecord);
-    setGeneratedQuiz((data as QuizRecord).quiz_data);
-    setQuizMeta({ title: (data as QuizRecord).title, category: (data as QuizRecord).category });
+    setSavedQuiz(saved);
+    setGeneratedQuiz(saved.quiz_data);
+    setQuizMeta({ title: saved.title, category: saved.category });
     setView("viewer");
   };
 

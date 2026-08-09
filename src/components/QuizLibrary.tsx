@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Trash2, FileText, Calendar, Loader2, Plus, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getSavedQuizzes, deleteQuiz } from "@/lib/storage";
 import type { QuizRecord } from "@/lib/types";
 
 interface QuizLibraryProps {
@@ -12,20 +12,15 @@ export function QuizLibrary({ onOpenQuiz, onGoHome }: QuizLibraryProps) {
   const [quizzes, setQuizzes] = useState<QuizRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchQuizzes = async () => {
+  const fetchQuizzes = () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase
-      .from("quizzes")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
+    try {
+      const data = getSavedQuizzes();
+      setQuizzes(data);
+    } catch {
       setError("Could not load saved quizzes.");
-    } else {
-      setQuizzes((data as QuizRecord[]) ?? []);
     }
     setLoading(false);
   };
@@ -34,13 +29,9 @@ export function QuizLibrary({ onOpenQuiz, onGoHome }: QuizLibraryProps) {
     fetchQuizzes();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    const { error } = await supabase.from("quizzes").delete().eq("id", id);
-    if (!error) {
-      setQuizzes((prev) => prev.filter((q) => q.id !== id));
-    }
-    setDeletingId(null);
+  const handleDelete = (id: string) => {
+    deleteQuiz(id);
+    setQuizzes((prev) => prev.filter((q) => q.id !== id));
   };
 
   const formatDate = (iso: string) => {
@@ -118,14 +109,9 @@ export function QuizLibrary({ onOpenQuiz, onGoHome }: QuizLibraryProps) {
               <div className="mt-3 flex items-center justify-end">
                 <button
                   onClick={() => handleDelete(quiz.id)}
-                  disabled={deletingId === quiz.id}
                   className="rounded-lg p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-500"
                 >
-                  {deletingId === quiz.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
