@@ -6,6 +6,12 @@ Turn any study material into interactive, high-quality quizzes in seconds using 
 
 ---
 
+## 🖼️ UI Preview
+
+![QuizForge Preview](./public/assets/preview.png)
+
+---
+
 ## ✨ Features
 
 - 📄 **Multiple Input Sources:** Upload PDF documents or directly paste text notes and articles.
